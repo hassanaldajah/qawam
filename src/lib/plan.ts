@@ -3,7 +3,7 @@ export interface Goal {
   current: number; target: number; heightCm: number; age: number; sex: Sex;
   activity: number; weeks: number; pregnant: boolean; medical: boolean;
 }
-export type Issue = "rate" | "floor" | "minor" | "pregnancy" | "medical" | "invalid";
+export type Issue = "rate" | "floor" | "minor" | "bmi" | "pregnancy" | "medical" | "invalid";
 export interface Plan { kcal: number; pctPerWeek: number; issues: Issue[]; safeWeeks: number; ok: boolean }
 
 const KCAL_PER_KG = 7700;
@@ -20,6 +20,8 @@ export function evaluate(g: Goal): Plan {
   const issues: Issue[] = [];
   if (pct > 1) issues.push("rate");
   if (lossKg > 0 && kcal < floor) issues.push("floor");
+  const hm = g.heightCm / 100;
+  if (lossKg > 0 && g.target / (hm * hm) < 18.5) issues.push("bmi");
   if (g.age < 18) issues.push("minor");
   if (g.pregnant) issues.push("pregnancy");
   if (g.medical) issues.push("medical");
