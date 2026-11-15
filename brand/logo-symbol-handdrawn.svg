@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Qawam">
+<defs>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9BE12E"/><stop offset="1" stop-color="#4FB83A"/></linearGradient>
+<linearGradient id="tb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2FC4A0"/><stop offset="1" stop-color="#16869E"/></linearGradient>
+<linearGradient id="ring" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4FB83A"/><stop offset=".5" stop-color="#16869E"/><stop offset="1" stop-color="#2FC4A0"/></linearGradient>
+</defs>
+<!-- ring -->
+<path d="M176 372A150 150 0 0 0 420 214" fill="none" stroke="url(#ring)" stroke-width="18" stroke-linecap="round"/>
+<!-- motion lines -->
+<path d="M122 196C158 156 205 142 250 148" fill="none" stroke="url(#gg)" stroke-width="9" stroke-linecap="round"/>
+<path d="M146 210C160 194 174 187 192 182" fill="none" stroke="#FA9414" stroke-width="7" stroke-linecap="round"/>
+<path d="M200 346C262 374 342 356 388 266" fill="none" stroke="#FA9414" stroke-width="10" stroke-linecap="round"/>
+<path d="M330 326C352 311 366 291 369 262" fill="none" stroke="#75D02B" stroke-width="5" stroke-linecap="round"/>
+<!-- leaf -->
+<path d="M78 192C138 180 178 214 172 272C170 302 152 326 134 330C94 320 68 252 78 192Z" fill="url(#gg)"/>
+<path d="M150 318C142 280 124 246 104 222M128 276L150 262M118 252L104 262M136 296L156 290" fill="none" stroke="#1B5E2A" stroke-width="5" stroke-linecap="round"/>
+<!-- runner: arm + upper body -->
+<path d="M262 126C292 118 318 140 330 170C346 184 384 176 426 140C420 178 392 206 346 214C312 220 288 198 274 172Z" fill="url(#gg)"/>
+<!-- torso + legs -->
+<path d="M240 158C292 148 312 208 288 244C306 256 296 282 262 290C232 298 208 318 178 344C194 302 216 274 242 252C262 230 262 196 240 158Z" fill="url(#tb)"/>
+<path d="M270 246C306 236 340 250 326 272C308 286 284 280 262 290Z" fill="#1E9DB0"/>
+<path d="M120 400C150 360 190 326 214 300C206 332 176 372 120 400Z" fill="url(#gg)"/>
+<!-- head -->
+<circle cx="330" cy="128" r="28" fill="#8FDB2C"/>
+</svg>
