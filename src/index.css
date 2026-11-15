@@ -5,3 +5,11 @@
 @theme{--color-bg:var(--bg);--color-fg:var(--fg);--color-primary:var(--primary);--color-onprimary:var(--on-primary);--color-accent:var(--accent);--color-card:var(--card);--color-line:var(--border)}
 html,body{background:var(--bg);color:var(--fg);margin:0;font-family:system-ui,"Segoe UI",Tahoma,sans-serif}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+@theme{--color-green:var(--green)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+[dir=rtl] .icon-dir{transform:scaleX(-1)}
+.skeleton{background:var(--border);border-radius:8px;animation:shimmer 1.2s linear infinite;opacity:.6}
+@keyframes shimmer{50%{opacity:1}}
+button:active:not(:disabled){transform:scale(.98)}
+button:disabled{opacity:.4}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.skeleton{animation:none;opacity:1}}
