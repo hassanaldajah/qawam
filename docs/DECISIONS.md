@@ -8,3 +8,8 @@
 - Accuracy: user must confirm grams before save, photo grams labelled estimates; USDA Foundation/SR Legacy only with explicit raw/cooked + yield factors; 4/4/9 check with tolerance (fibre/alcohol); goal engine moves BEFORE the dashboard phase; calorie floors + under-18/pregnancy gating.
 - Cron Worker separate from Pages; cache VAPID JWT per origin; payload-less pushes; index next_fire_at; ~40 pushes/tick, carry over.
 - Owner secret: generated 256-bit random, SHA-256 + constant-time compare; consider Cloudflare Access (free) in front of owner panel (to verify).
+
+## 2026-11-15 owner instruction: publishing
+- AFTER the code is finished and all gates pass: create a PUBLIC GitHub repo, push, and connect it to Cloudflare Pages (Git integration).
+- Public repo => before push: secret scan clean, no .dev.vars/tokens/owner secret, no personal data, USDA credit in README, license chosen.
+- Not before completion. Not earlier phases.
