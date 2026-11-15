@@ -29,3 +29,9 @@
 - Owner panel: aggregates only, Cloudflare Access only if verified free.
 - Session cookie `__Host-` prefix; shortcut-key schema moves to phase 2; export + delete account built early.
 - Reviewer note: alsaqr suggested dropping alsheikh (owner dropped it 2026-11-13), but owner re-chose "alsaqr + alsheikh" today for plan/final review only.
+
+## 2026-11-15 owner instruction: no owner password / no owner panel
+- Dropped: owner panel, OWNER_SECRET, Cloudflare Access for the panel, owner-hash CPU concern.
+- Replacement: admin tasks (usage stats, pause/resume AI, approve foods) via `wrangler d1 execute` / a local script run by the owner. A global `ai_enabled` flag lives in D1. Zero extra attack surface, free.
+- Foods: only the built-in USDA/recipe table; user custom foods stay private. No public approval flow.
+- PLAN.md feature H and related threat-model rows are superseded by this entry.
