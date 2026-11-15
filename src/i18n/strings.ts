@@ -23,6 +23,7 @@ export const ar = {
     backupTitle: "رمز الاسترجاع", backupNotice: "لا بريد ولا كلمة مرور. إذا مسحت بيانات المتصفح أو غيّرت الجهاز أو المتصفح، تفقد الوصول بدون هذا الرمز.",
     copy: "نسخ", copied: "تم النسخ", download: "تنزيل .txt", saved: "حفظت الرمز", savedHint: "يجب تأكيد حفظ الرمز للمتابعة",
   },
+  today: { kcal: "السعرات", left: "متبقٍ", protein: "بروتين", carbs: "كربوهيدرات", fat: "دهون", water: "ماء", steps: "خطوات", of: "من" },
   disclaimer: "معلومات عامة وليست نصيحة طبية", lang: "English",
 };
 export const en: typeof ar = {
@@ -50,5 +51,6 @@ export const en: typeof ar = {
     backupTitle: "Recovery code", backupNotice: "No email or password. If you clear browser data or switch device or browser, you lose access unless you have this code.",
     copy: "Copy", copied: "Copied", download: "Download .txt", saved: "I saved it", savedHint: "Confirm you saved the code to continue",
   },
+  today: { kcal: "Calories", left: "left", protein: "Protein", carbs: "Carbs", fat: "Fat", water: "Water", steps: "Steps", of: "of" },
   disclaimer: "General info, not medical advice", lang: "العربية",
 };

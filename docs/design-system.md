@@ -33,3 +33,25 @@ All interactive targets 44x44 min, 8px gap between neighbors. Text contrast at l
 
 ## Font recommendation (not yet adopted)
 Primary: IBM Plex Sans Arabic (Arabic) plus IBM Plex Sans (Latin), both SIL OFL 1.1; matched metrics. Alternative: Noto Sans Arabic + Inter (OFL). Verify license text in each upstream repo before bundling, include OFL files, self-host WOFF2 (no Google CDN, for privacy/offline PWA), subset, `font-display:swap`. Stack: `"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,sans-serif`. Weights 400/500/700 only.
+
+## Neon
+Tokens (additive; base palette unchanged): `--neon-teal #19D3F0`, `--neon-lime #9BFF2E`, `--neon-orange #FFA630`, `--neon-navy #101729`.
+Contrast (WCAG): navy text on neon fill: lime 14.2, teal 9.9, orange 9.1. Neon text on navy bg: same values (AA). Neon vs light bg #F6F8F7: lime 1.2, teal 1.7, orange 1.8; vs white 1.25/1.8/1.95. White text on neon always fails.
+
+Gradients (angle 135deg):
+- `--g-tl: linear-gradient(135deg,#19D3F0,#9BFF2E)`
+- `--g-lo: linear-gradient(135deg,#9BFF2E,#FFA630)`
+- `--g-to: linear-gradient(135deg,#19D3F0,#FFA630)`
+- `--g-tlo: linear-gradient(135deg,#19D3F0,#9BFF2E 50%,#FFA630)`
+- `--g-night: linear-gradient(160deg,#101729,#0E6577)`
+
+Glow: `0 0 8px color-mix(in srgb,C 60%,transparent),0 0 24px color-mix(in srgb,C 30%,transparent)` (C = a neon token). Dark mode only; light mode uses `0 4px 14px` at 25% alpha.
+
+Usage:
+- Fills (buttons, ring, bars, badges): any gradient with `#101729` text (AA, at least 9.1). Never white text.
+- Text: neon only on dark bg. Light mode keeps `--primary/--accent/--green`.
+- Borders and icons: dark bg only (3:1 passes). On light, 2px `--primary` outline; neon is decoration.
+- Glows and large graphics (hero ring, streak, confetti): decorative, never the sole signal.
+- Reduced motion: no pulsing glow.
+
+Macros (dark / light): protein `#19D3F0`/`#0E6577` (9.9 / 6.3), carbs `#FFA630`/`--accent` (9.1), fat `#9BFF2E`/`--green` (14.2), water `#4DA3FF` (6.8 on navy), steps `#FF5FA2` (6.3 on navy). Always pair with label or icon.

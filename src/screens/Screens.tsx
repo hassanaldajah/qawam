@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Btn, Card, Screen, Skeleton } from "../app/ui";
+import { Btn, Card, Ring, Screen, Skeleton } from "../app/ui";
 import { useApp } from "../lib/store";
 
 function Empty({ text, cta, to }: { text: string; cta?: string; to?: string }) {
@@ -9,7 +9,7 @@ function Empty({ text, cta, to }: { text: string; cta?: string; to?: string }) {
     <Card className="flex flex-col items-start gap-3">
       <p className="m-0">{text}</p>
       {cta && to && (
-        <Link to={to} className="inline-flex min-h-11 min-w-11 items-center rounded-xl bg-primary px-4 font-medium text-onprimary no-underline">{cta}</Link>
+        <Link to={to} className="inline-flex min-h-11 min-w-11 items-center cta rounded-full px-5 font-bold no-underline">{cta}</Link>
       )}
     </Card>
   );
@@ -28,7 +28,28 @@ function WithLoading({ children }: { children: React.ReactNode }) {
 
 export function Today() {
   const { t } = useTranslation();
-  return <Screen title={t("screens.today")}><WithLoading><Empty text={t("empty.today")} cta={t("empty.logCta")} to="/log" /></WithLoading></Screen>;
+  const T = (k: string) => t(`today.${k}`);
+  return (
+    <Screen title={t("screens.today")}>
+      <WithLoading>
+        <div className="flex flex-col gap-3">
+          <section aria-label={T("kcal")} className="hero rise flex flex-col items-center gap-4 p-5">
+            <Ring big size={160} value={0} max={2000} color="var(--n-lime)" label={T("kcal")} unit={`${T("of")} 2000`} />
+            <div className="flex w-full justify-around">
+              <Ring size={72} value={0} max={120} color="var(--n-lime)" label={T("protein")} unit="g" />
+              <Ring size={72} value={0} max={250} color="var(--n-orange)" label={T("carbs")} unit="g" />
+              <Ring size={72} value={0} max={70} color="#FFFFFF" label={T("fat")} unit="g" />
+            </div>
+          </section>
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="flex justify-center"><Ring size={88} value={0} max={8} color="var(--n-teal)" label={T("water")} /></Card>
+            <Card className="flex justify-center"><Ring size={88} value={0} max={10000} color="var(--n-lime)" label={T("steps")} /></Card>
+          </div>
+          <Empty text={t("empty.today")} cta={t("empty.logCta")} to="/log" />
+        </div>
+      </WithLoading>
+    </Screen>
+  );
 }
 export function Log() {
   const { t } = useTranslation();
@@ -42,7 +63,7 @@ export function Log() {
           const disabled = offline && k !== "manual";
           return (
             <button key={k} role="tab" type="button" aria-selected={tab === k} disabled={disabled} onClick={() => setTab(k)}
-              className={`min-h-11 min-w-11 flex-1 rounded-xl border border-line px-3 font-medium ${tab === k ? "bg-primary text-onprimary" : "bg-transparent text-fg"}`}>
+              className={`min-h-11 min-w-11 flex-1 rounded-full border border-line px-3 font-bold ${tab === k ? "pill-active border-transparent" : "bg-transparent text-fg"}`}>
               {t(`log.${k}`)}
             </button>
           );

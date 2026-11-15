@@ -13,3 +13,26 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 button:active:not(:disabled){transform:scale(.98)}
 button:disabled{opacity:.4}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.skeleton{animation:none;opacity:1}}
+/* Sporty layer: derived from brand palette only. Ring/decor colors are non-text. */
+:root{--hero-a:#0E6577;--hero-b:#101729;--hero-fg:#fff;--neon:#75D02B;--r-pro:#75D02B;--r-carb:#FA9414;--r-water:#16869E;--r-steps:#75D02B;--glow:0 6px 18px rgb(14 101 119/.28)}
+:root[data-theme="dark"]{--hero-a:#16869E;--glow:0 0 22px rgb(117 208 43/.28)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--hero-a:#16869E;--glow:0 0 22px rgb(117 208 43/.28)}}
+.hero{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));color:var(--hero-fg);border-radius:24px;box-shadow:var(--glow);position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset-inline-end:-40px;inset-block-start:-40px;width:140px;height:140px;border-radius:9999px;background:radial-gradient(circle,rgb(250 148 20/.45),transparent 70%);pointer-events:none}
+.stat{font-weight:800;font-size:2rem;line-height:1.2;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ring-fill{transition:stroke-dashoffset .6s cubic-bezier(.2,0,0,1)}
+.pill-active{background:var(--primary);color:var(--on-primary);box-shadow:var(--glow)}
+.rise{animation:rise .3s cubic-bezier(.2,0,0,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+:root[data-theme="dark"] .card-pop{border-color:rgb(117 208 43/.35)}
+@media (prefers-reduced-motion: reduce){.ring-fill{transition:none}.rise{animation:none}}
+/* Neon layer (fills, borders, glows, large graphics only; never body text) */
+:root{--n-teal:#16869E;--n-lime:#75D02B;--n-orange:#FA9414;--g-tl:linear-gradient(135deg,#16869E,#75D02B);--g-lo:linear-gradient(135deg,#75D02B,#FA9414);--g-to:linear-gradient(135deg,#16869E,#FA9414);--glow-lime:0 0 14px rgb(117 208 43/.55);--glow-teal:0 0 14px rgb(22 134 158/.55);--glow-orange:0 0 14px rgb(250 148 20/.55)}
+:root[data-theme="dark"]{--glow-lime:0 0 18px rgb(117 208 43/.9),0 0 36px rgb(117 208 43/.4);--glow-teal:0 0 18px rgb(22 190 220/.8);--glow-orange:0 0 18px rgb(250 148 20/.85)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--glow-lime:0 0 18px rgb(117 208 43/.9),0 0 36px rgb(117 208 43/.4);--glow-teal:0 0 18px rgb(22 190 220/.8);--glow-orange:0 0 18px rgb(250 148 20/.85)}}
+.hero{background:linear-gradient(135deg,var(--hero-a),var(--hero-b) 70%);border:1px solid transparent;border-image:none;box-shadow:var(--glow-teal)}
+.hero::before{content:"";position:absolute;inset-inline-start:0;inset-block-end:0;width:100%;height:4px;background:var(--g-lo)}
+.pill-active{background:var(--g-tl);color:#101729;box-shadow:var(--glow-lime)}
+.cta{background:var(--g-lo);color:#101729;box-shadow:var(--glow-orange)}
+.neon-num{text-shadow:0 0 12px currentColor}
+.ring-fill{filter:drop-shadow(0 0 4px currentColor)}
