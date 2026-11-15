@@ -66,32 +66,3 @@ export function useTilt(root: RefObject<HTMLElement | null>, max = 10) {
   }, [root, max]);
 }
 
-/** Dot + ring cursor that trails the mouse; grows over interactive elements. Mouse only. */
-export function useDotCursor() {
-  useEffect(() => {
-    if (!finePointer() || reducedMotion()) return;
-    const dot = document.createElement("div"), ring = document.createElement("div");
-    dot.className = "cursor-dot"; ring.className = "cursor-ring";
-    dot.setAttribute("aria-hidden", "true"); ring.setAttribute("aria-hidden", "true");
-    document.body.append(dot, ring);
-    let x = -100, y = -100, rx = x, ry = y, raf = 0;
-    const move = (e: PointerEvent) => {
-      if (e.pointerType !== "mouse") return;
-      x = e.clientX; y = e.clientY;
-      document.documentElement.classList.add("has-cursor");
-      const hot = (e.target as Element | null)?.closest?.("a,button,summary,input,select,[role=tab],.tilt");
-      ring.classList.toggle("hot", !!hot);
-    };
-    const leave = () => document.documentElement.classList.remove("has-cursor");
-    const loop = () => {
-      rx += (x - rx) * 0.18; ry += (y - ry) * 0.18;
-      dot.style.transform = `translate3d(${x}px,${y}px,0)`;
-      ring.style.transform = `translate3d(${rx}px,${ry}px,0)`;
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    window.addEventListener("pointermove", move, { passive: true });
-    document.addEventListener("pointerleave", leave);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("pointermove", move); document.removeEventListener("pointerleave", leave); dot.remove(); ring.remove(); leave(); };
-  }, []);
-}

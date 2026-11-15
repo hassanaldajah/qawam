@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Camera, MessageSquareText, Target, Dumbbell, Moon, Bell, ShieldCheck, Plus, CircleCheck, Lock, Sparkles, Flame, Droplets, Footprints, KeyRound } from "lucide-react";
 import { ButtonLink, Logo, LangToggle, Ring, Bar } from "../app/ui";
-import { reducedMotion, useDotCursor, useReveal, useTilt } from "../lib/fx";
+import { reducedMotion, useReveal, useTilt } from "../lib/fx";
 import { useApp } from "../lib/store";
 import { dbgVal } from "../lib/debug";
 
@@ -86,7 +86,7 @@ export function Landing() {
   const status = useApp((s) => s.status);
   const page = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
-  useReveal(page); useTilt(page); useDotCursor();
+  useReveal(page); useTilt(page);
   useEffect(() => { const id = dbgVal("scroll"); if (id) setTimeout(() => document.getElementById(id)?.scrollIntoView(), 300); }, []);
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 8);

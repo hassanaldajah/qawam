@@ -343,12 +343,6 @@ button.list-item{border:1px solid var(--border);background:var(--card)}
 
 /* Reveal (only when JS opted in; content stays visible without JS) */
 
-/* Custom dot cursor: mouse devices only (JS adds html.has-cursor) */
-.cursor-dot,.cursor-ring{position:fixed;top:0;left:0;z-index:200;pointer-events:none;border-radius:50%;opacity:0;transition:opacity .2s}
-.cursor-dot{width:8px;height:8px;margin:-4px 0 0 -4px;background:var(--primary)}
-.cursor-ring{width:34px;height:34px;margin:-17px 0 0 -17px;border:1.5px solid color-mix(in srgb,var(--primary) 70%,transparent);transition:opacity .2s,width .2s,height .2s,margin .2s}
-html.has-cursor .cursor-dot,html.has-cursor .cursor-ring{opacity:1}
-html.has-cursor .cursor-ring.hot{width:54px;height:54px;margin:-27px 0 0 -27px;border-color:var(--lime)}
 
 /* ============ Splash + Intro ============ */
 .splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--bg)}
