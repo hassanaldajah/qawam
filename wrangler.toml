@@ -11,5 +11,5 @@ ALLOWED_ORIGIN = "https://qawam.al-hassan.dev"
 binding = "DB"
 database_name = "qawam"
 # Placeholder: replace with the id printed by `npx wrangler d1 create qawam` (an id is not a secret).
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "eded6aeb-46ff-4d12-9c40-e1542cd5f658"
 migrations_dir = "migrations"
