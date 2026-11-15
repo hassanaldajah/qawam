@@ -21,9 +21,9 @@ CREATE TABLE backup_codes (
   public_id TEXT NOT NULL UNIQUE CHECK (length(public_id) = 10),
   secret_hash TEXT NOT NULL CHECK (length(secret_hash) = 64),
   created_at INTEGER NOT NULL,
-  failed_attempts INTEGER NOT NULL DEFAULT 0 CHECK (failed_attempts >= 0),
-  locked_until INTEGER NOT NULL DEFAULT 0,
-  last_failed_at INTEGER
+  -- Set when the code was reset without the old code (session only); drives a banner.
+  -- No failure counter / lock on purpose: any account-keyed lock is attacker-controlled.
+  reset_without_code_at INTEGER
 ) STRICT;
 
 CREATE TABLE profile (
@@ -57,7 +57,8 @@ CREATE TABLE custom_foods (
   carbs_100g REAL NOT NULL DEFAULT 0 CHECK (carbs_100g BETWEEN 0 AND 100),
   fat_100g REAL NOT NULL DEFAULT 0 CHECK (fat_100g BETWEEN 0 AND 100),
   fiber_100g REAL NOT NULL DEFAULT 0 CHECK (fiber_100g BETWEEN 0 AND 100),
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  UNIQUE (id, user_id)
 ) STRICT;
 CREATE INDEX idx_custom_foods_user ON custom_foods(user_id);
 
@@ -67,16 +68,17 @@ CREATE TABLE meals (
   day TEXT NOT NULL CHECK (length(day) = 10),
   meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
   source TEXT NOT NULL DEFAULT 'manual' CHECK (source IN ('manual', 'text', 'photo')),
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  UNIQUE (id, user_id)
 ) STRICT;
 CREATE INDEX idx_meals_user_day ON meals(user_id, day);
 
 CREATE TABLE meal_items (
   id INTEGER PRIMARY KEY,
-  meal_id INTEGER NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
+  meal_id INTEGER NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   food_ref TEXT CHECK (food_ref IS NULL OR length(food_ref) <= 40),
-  custom_food_id INTEGER REFERENCES custom_foods(id) ON DELETE SET NULL,
+  custom_food_id INTEGER,
   name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 60),
   grams REAL NOT NULL CHECK (grams BETWEEN 1 AND 2000),
   kcal REAL NOT NULL CHECK (kcal BETWEEN 0 AND 20000),
@@ -85,7 +87,12 @@ CREATE TABLE meal_items (
   fat_g REAL NOT NULL DEFAULT 0 CHECK (fat_g >= 0),
   fiber_g REAL NOT NULL DEFAULT 0 CHECK (fiber_g >= 0),
   is_estimate INTEGER NOT NULL DEFAULT 0 CHECK (is_estimate IN (0, 1)),
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  -- User-scoped FKs: an item can only point at a meal / custom food of the SAME user.
+  FOREIGN KEY (meal_id, user_id) REFERENCES meals(id, user_id) ON DELETE CASCADE,
+  -- No action clause (checked at statement end, so the users cascade still works).
+  -- Deleting a custom food: first UPDATE meal_items SET custom_food_id = NULL in the same batch.
+  FOREIGN KEY (custom_food_id, user_id) REFERENCES custom_foods(id, user_id)
 ) STRICT;
 CREATE INDEX idx_meal_items_user_meal ON meal_items(user_id, meal_id);
 CREATE INDEX idx_meal_items_meal ON meal_items(meal_id);
@@ -177,11 +184,12 @@ CREATE TABLE rate_limits (
 ) STRICT;
 CREATE INDEX idx_rate_limits_window ON rate_limits(window_start);
 
--- Minimal audit trail (no payload). Survives account deletion on purpose.
+-- Minimal audit trail (no payload). Survives account deletion on purpose; purged after 90 days.
 CREATE TABLE audit_log (
   id INTEGER PRIMARY KEY,
   user_id TEXT NOT NULL,
-  event TEXT NOT NULL CHECK (event IN ('account_create', 'account_delete', 'restore', 'backup_code_create', 'shortcut_key_create')),
+  event TEXT NOT NULL CHECK (event IN ('account_create', 'account_delete', 'restore', 'backup_code_create', 'backup_code_reset', 'shortcut_key_create')),
   ts INTEGER NOT NULL
 ) STRICT;
 CREATE INDEX idx_audit_user ON audit_log(user_id);
+CREATE INDEX idx_audit_ts ON audit_log(ts);

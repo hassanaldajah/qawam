@@ -4,6 +4,7 @@ import { HttpError, nowSec } from "./http";
 
 export const COOKIE_NAME = "__Host-qs";
 export const SESSION_TTL = 31536000; // 1 year
+export const SESSION_MAX_AGE = 63072000; // 2 years absolute
 const REFRESH_AFTER = 86400; // sliding refresh at most once per day (D1 write budget)
 const TOKEN_RE = /^[0-9a-f]{64}$/;
 
@@ -55,11 +56,12 @@ export async function getSession(ctx: Ctx): Promise<Session | null> {
   const tokenHash = await sha256Hex(token);
   const now = nowSec();
   const row = await ctx.env.DB
-    .prepare("SELECT user_id, last_seen, expires_at FROM sessions WHERE token_hash = ?1")
+    .prepare("SELECT user_id, created_at, last_seen, expires_at FROM sessions WHERE token_hash = ?1")
     .bind(tokenHash)
-    .first<{ user_id: string; last_seen: number; expires_at: number }>();
+    .first<{ user_id: string; created_at: number; last_seen: number; expires_at: number }>();
   if (!row) return null;
-  if (row.expires_at <= now) {
+  // Sliding expiry plus an absolute cap (ASVS V3.3): re-auth via backup code after 2 years.
+  if (row.expires_at <= now || row.created_at <= now - SESSION_MAX_AGE) {
     await ctx.env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?1").bind(tokenHash).run();
     return null;
   }

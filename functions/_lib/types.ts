@@ -23,6 +23,10 @@ export interface Env {
   DB: D1Database;
   /** Exact origin allowed for state-changing requests, e.g. https://qawam.al-hassan.dev */
   ALLOWED_ORIGIN: string;
+  /** Secret (wrangler pages secret / .dev.vars) for HMAC of rate-limit IP keys. Required. */
+  RL_KEY?: string;
+  /** Turnstile secret (wrangler pages secret / .dev.vars). Required for create + restore. */
+  TURNSTILE_SECRET?: string;
 }
 
 /** Subset of the Pages Functions EventContext that our code uses. */

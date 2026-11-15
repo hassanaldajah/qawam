@@ -7,10 +7,13 @@ export const onRequestGet = async (ctx: Ctx): Promise<Response> => {
   const s = await getSession(ctx);
   if (!s) return json({ authenticated: false });
   const bc = await ctx.env.DB
-    .prepare("SELECT 1 AS x FROM backup_codes WHERE user_id = ?1")
+    .prepare("SELECT reset_without_code_at AS r FROM backup_codes WHERE user_id = ?1")
     .bind(s.userId)
-    .first();
-  return withRefresh(json({ authenticated: true, hasBackupCode: bc !== null }), s);
+    .first<{ r: number | null }>();
+  const out: Record<string, unknown> = { authenticated: true, hasBackupCode: bc !== null };
+  // Banner on every device: the code was reset without the old code (possible cookie theft).
+  if (bc?.r) out.backupCodeResetAt = bc.r;
+  return withRefresh(json(out), s);
 };
 
 /** DELETE /api/auth/session : log out this device. */

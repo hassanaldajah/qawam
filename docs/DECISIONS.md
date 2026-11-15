@@ -35,3 +35,19 @@
 - Replacement: admin tasks (usage stats, pause/resume AI, approve foods) via `wrangler d1 execute` / a local script run by the owner. A global `ai_enabled` flag lives in D1. Zero extra attack surface, free.
 - Foods: only the built-in USDA/recipe table; user custom foods stay private. No public approval flow.
 - PLAN.md feature H and related threat-model rows are superseded by this entry.
+
+## 2026-11-15 security-review-1 fixes (per docs/security-advice.md)
+- Restore: NO per-account lock or failure counter (any account-keyed lock is attacker-controlled). Defence = 130-bit secret + per-IP (/64) 10 attempts/h consumed first + Turnstile on every attempt; one 401 shape, dummy-hash compare for unknown ids.
+- Turnstile (free: unlimited challenges, 20 widgets) required on account create (body `{turnstileToken}`) and restore (`{code, turnstileToken}`). Server: siteverify checks success + hostname + action (`create`/`restore`); failure 403, siteverify down or secret missing 503. Secret only via `wrangler pages secret put TURNSTILE_SECRET` / `.dev.vars`.
+- Frontend contract (src/, not done yet): load `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit` from the bundle on the create/restore screens only; execute at submit (tokens single-use, 300 s); never self-host api.js, never add COEP; the future service worker must not intercept challenges.cloudflare.com. Client must not auto-create an account on 401 (2-year absolute session cap, L7).
+- RL_KEY secret (HMAC for IP rate-limit keys) is required; missing = 500. Set with `wrangler pages secret put RL_KEY`.
+- Backup code: rotation needs `{currentCode}`; lost code = `{lostCode:true}` with session only, other sessions KEPT, `backupCodeResetAt` returned by GET /api/auth/session for a banner on every device. 3 codes/day.
+- Export v2: first call returns page 1 of every table + `next` cursors; `?table=<name>&after=<cursor>` for further pages (2000 rows/page). 5 full exports/h, 200 pages/h.
+- Housekeeping: 1% of consume() calls purge old rate_limits (>2 days) and audit_log (>90 days), 500 rows per table per run. Replace with a cron Worker when one exists.
+- meal_items FKs are composite (meal_id, user_id) / (custom_food_id, user_id). Deleting a custom food endpoint must first `UPDATE meal_items SET custom_food_id = NULL WHERE custom_food_id = ? AND user_id = ?` in the same batch; map FK errors on insert to 404.
+- Owner dashboard task (free): one WAF rate-limiting rule on `/api/*` so floods are blocked before they spend the 100k/day Functions budget.
+
+## 2026-11-15 design note: future /api/shortcut/* (iOS Shortcuts), not implemented
+- Exempt from the Origin / X-Qawam / Sec-Fetch-Site checks ONLY when `new URL(req.url).pathname.startsWith("/api/shortcut/")` (never `includes`).
+- Such requests MUST carry `Authorization: Bearer <key>` (hash looked up in shortcut_keys, scopes enforced, revoked/expired rejected) and MUST be rejected (400) if a `Cookie` header is present, so the cookie session can never ride on the exemption.
+- Per-key rate limit + body cap apply as everywhere else.

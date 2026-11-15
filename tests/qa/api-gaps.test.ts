@@ -88,14 +88,12 @@ describe("QA: restore lockout", () => {
     expect(r1.status).toBe(r2.status);
     expect(await r1.text()).toBe(await r2.text());
   });
-  it("failed guesses cause bounded delay (<=1h), not a hard lock", async () => {
+  // Updated for security-review-1 M2: no per-account lock at all (docs/security-advice.md).
+  it("failed guesses never lock the account (no per-account lock)", async () => {
     const a = await newAccount(env, ip());
     const shown = await issueCode(a);
     const pub = pubOf(shown);
     for (let k = 0; k < 3; k++) await call(env, "/api/auth/restore", { method: "POST", body: { code: code(pub) }, ip: ip() });
-    const row = await env.DB.prepare("SELECT locked_until FROM backup_codes WHERE public_id=?1").bind(pub).first<{ locked_until: number }>();
-    expect(row!.locked_until - Math.floor(Date.now() / 1000)).toBeLessThanOrEqual(3600);
-    await env.DB.prepare("UPDATE backup_codes SET locked_until = 0 WHERE public_id=?1").bind(pub).run();
     expect((await call(env, "/api/auth/restore", { method: "POST", body: { code: shown }, ip: ip() })).status).toBe(200);
   });
   it("restore revokes shortcut keys and the old session", async () => {

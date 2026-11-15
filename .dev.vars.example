@@ -1,0 +1,6 @@
+# Copy to .dev.vars (git-ignored). Never commit real values.
+# RL_KEY: any long random string locally; production via `wrangler pages secret put RL_KEY`.
+RL_KEY=replace-with-random-string
+# TURNSTILE_SECRET: use Cloudflare's documented Turnstile *testing* secret locally
+# (see Turnstile docs, "Testing"); production via `wrangler pages secret put TURNSTILE_SECRET`.
+TURNSTILE_SECRET=replace-with-turnstile-test-secret

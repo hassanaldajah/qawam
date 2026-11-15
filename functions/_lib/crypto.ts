@@ -16,6 +16,12 @@ export async function sha256Hex(input: string): Promise<string> {
   return toHex(new Uint8Array(digest));
 }
 
+export async function hmacSha256Hex(key: string, input: string): Promise<string> {
+  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(input));
+  return toHex(new Uint8Array(sig));
+}
+
 /** Constant-time comparison for equal-length strings (hash hex). */
 export function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;

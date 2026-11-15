@@ -1,6 +1,6 @@
 import { B32, randomBase32 } from "./crypto";
 
-// Code = 10-char public id (lookup, rate-limit per account) + 26-char secret (130 bits).
+// Code = 10-char public id (lookup; rate-limited per IP + id) + 26-char secret (130 bits).
 export const ID_LEN = 10;
 export const SECRET_LEN = 26;
 const TOTAL = ID_LEN + SECRET_LEN;
@@ -23,10 +23,4 @@ export function parseBackupCode(input: string): { publicId: string; secret: stri
   if (s.length !== TOTAL) return null;
   for (const c of s) if (!B32.includes(c)) return null;
   return { publicId: s.slice(0, ID_LEN), secret: s.slice(ID_LEN) };
-}
-
-/** Delay after the n-th consecutive failure: 1, 2, 4 ... seconds, capped at 1 hour. */
-export function backoffSeconds(failures: number): number {
-  if (failures <= 0) return 0;
-  return Math.min(2 ** Math.min(failures - 1, 12), 3600);
 }

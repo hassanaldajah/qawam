@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Miniflare } from "miniflare";
 import type { Env } from "../../functions/_lib/types";
 import { call, cookieOf, newAccount, setup } from "./harness";
-import { backoffSeconds, generateBackupCode, parseBackupCode } from "../../functions/_lib/backup";
+import { generateBackupCode, parseBackupCode } from "../../functions/_lib/backup";
 import { sha256Hex } from "../../functions/_lib/crypto";
 
 let mf: Miniflare;
@@ -116,7 +116,6 @@ describe("backup code", () => {
     expect(parseBackupCode(c.display.toLowerCase())).toEqual({ publicId: c.publicId, secret: c.secret });
     expect(parseBackupCode("short")).toBeNull();
     expect(parseBackupCode("U".repeat(36))).toBeNull();
-    expect([1, 2, 3, 4, 13, 50].map(backoffSeconds)).toEqual([1, 2, 4, 8, 3600, 3600]);
   });
 
   it("requires a session; shown once; only hash stored", async () => {
@@ -149,43 +148,25 @@ describe("backup code", () => {
     expect(await (await call(env, "/api/auth/session", { cookie: otherDevice })).json()).toEqual({ authenticated: false });
 
     // Regenerate -> previous code invalid.
-    await call(env, "/api/auth/backup-code", { method: "POST", cookie: newCookie });
+    await call(env, "/api/auth/backup-code", { method: "POST", cookie: newCookie, body: { currentCode: code } });
     const again = await call(env, "/api/auth/restore", { method: "POST", body: { code }, ip: freshIp() });
     expect(again.status).toBe(401);
   });
 
-  it("wrong secret -> 401, then increasing delay (429 + Retry-After), no hard lock", async () => {
+  it("no per-account lock: failures from an attacker never block the correct code", async () => {
     const cookie = await newAccount(env, freshIp());
     const { code } = (await (await call(env, "/api/auth/backup-code", { method: "POST", cookie })).json()) as { code: string };
     const p = parseBackupCode(code)!;
     const wrong = p.publicId + (p.secret[0] === "0" ? "1" : "0") + p.secret.slice(1);
-    const ip = freshIp();
-
-    expect((await call(env, "/api/auth/restore", { method: "POST", body: { code: wrong }, ip })).status).toBe(401);
-    const locked = await call(env, "/api/auth/restore", { method: "POST", body: { code }, ip });
-    expect(locked.status).toBe(429);
-    expect(Number(locked.headers.get("Retry-After"))).toBeGreaterThanOrEqual(1);
-
-    const lockOf = async () =>
-      (await env.DB.prepare("SELECT failed_attempts AS f, locked_until AS u, last_failed_at AS t FROM backup_codes WHERE public_id = ?1")
-        .bind(p.publicId).first<{ f: number; u: number; t: number }>())!;
-    // Simulate waiting out each delay; delays grow 1, 2, 4.
-    const delays: number[] = [];
-    for (let i = 0; i < 3; i++) {
-      if (i > 0) {
-        await env.DB.prepare("UPDATE backup_codes SET locked_until = 0 WHERE public_id = ?1").bind(p.publicId).run();
-        await call(env, "/api/auth/restore", { method: "POST", body: { code: wrong }, ip: freshIp() });
+    // Attacker exhausts several IP buckets on this public id.
+    for (let k = 0; k < 3; k++) {
+      const ip = freshIp();
+      for (let i = 0; i < 10; i++) {
+        expect((await call(env, "/api/auth/restore", { method: "POST", body: { code: wrong }, ip })).status).toBe(401);
       }
-      const r = await lockOf();
-      delays.push(r.u - r.t);
     }
-    expect(delays).toEqual([1, 2, 4]);
-
-    // After waiting, the right code still works (no hard lock) and resets the counter.
-    await env.DB.prepare("UPDATE backup_codes SET locked_until = 0 WHERE public_id = ?1").bind(p.publicId).run();
     const ok = await call(env, "/api/auth/restore", { method: "POST", body: { code }, ip: freshIp() });
     expect(ok.status).toBe(200);
-    expect((await lockOf()).f).toBe(0);
   });
 
   it("per-IP failure cap (10/h)", async () => {
