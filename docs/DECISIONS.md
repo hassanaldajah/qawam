@@ -51,3 +51,9 @@
 - Exempt from the Origin / X-Qawam / Sec-Fetch-Site checks ONLY when `new URL(req.url).pathname.startsWith("/api/shortcut/")` (never `includes`).
 - Such requests MUST carry `Authorization: Bearer <key>` (hash looked up in shortcut_keys, scopes enforced, revoked/expired rejected) and MUST be rejected (400) if a `Cookie` header is present, so the cookie session can never ride on the exemption.
 - Per-key rate limit + body cap apply as everywhere else.
+
+## 2026-11-15 security fix round 2
+- Turnstile order (create + restore): per-IP siteverify meter (30/h) -> siteverify (3 s timeout) -> strict action buckets. Bots without valid solves cannot drain a shared IP's restore/create allowance; garbage tokens cannot cause unbounded outbound fetches.
+- Account creation: 5/h and 10/day per /64, 200/h global. Accepted residual: a distributed attacker paying for solves can fill the global cap (sign-up outage, no data exposure). Owner should add the free WAF rate rule and watch for `create_global_cap_hit` in logs.
+- Orphan accounts (no session, no backup code, >1 day old) are deleted by purgeExpired: they are unreachable, so keeping their health data has no user benefit.
+- Backup code: lost-code reset 1/day (own bucket), rotation 3/day; rotation is compare-and-swap.

@@ -275,3 +275,90 @@ describe("L4-L8", () => {
     expect(r3.status).toBe(201);
   });
 });
+
+describe("Re-review round 2 (N1-N5, I3)", () => {
+  it("N2: hung siteverify is aborted after the timeout and fails closed (503)", async () => {
+    const t0 = Date.now();
+    const res = await call(env, "/api/auth/account", { method: "POST", ip: freshIp(), turnstile: "hang" });
+    expect(res.status).toBe(503);
+    expect(Date.now() - t0).toBeLessThan(6000);
+  }, 10000);
+
+  it("N2: siteverify calls are metered per IP before fetching", async () => {
+    const ip = freshIp();
+    for (let i = 0; i < 30; i++) {
+      expect((await call(env, "/api/auth/restore", { method: "POST", body: { code: "0".repeat(36) }, ip, turnstile: "bad" })).status).toBe(403);
+    }
+    const before = siteverifyCalls.length;
+    expect((await call(env, "/api/auth/restore", { method: "POST", body: { code: "0".repeat(36) }, ip, turnstile: "bad" })).status).toBe(429);
+    expect(siteverifyCalls.length).toBe(before);
+  });
+
+  it("N4: failed Turnstile does not use up the restore bucket of a shared IP", async () => {
+    const ip = freshIp();
+    for (let i = 0; i < 12; i++) {
+      await call(env, "/api/auth/restore", { method: "POST", body: { code: "0".repeat(36) }, ip, turnstile: "bad" });
+    }
+    expect((await call(env, "/api/auth/restore", { method: "POST", body: { code: "0".repeat(36) }, ip })).status).toBe(401);
+  });
+
+  it("N1: one IP cannot take more than its daily share of the global create cap", async () => {
+    const prefix = "2001:db8:99:";
+    let created = 0;
+    // 3 hours' worth: hourly cap 5, daily cap 10. Simulate by clearing the hourly bucket.
+    for (let h = 0; h < 3; h++) {
+      for (let i = 0; i < 5; i++) {
+        const r = await call(env, "/api/auth/account", { method: "POST", ip: `${prefix}1::${h}${i}` });
+        if (r.status === 201) created++;
+      }
+      await env.DB.prepare("DELETE FROM rate_limits WHERE key LIKE 'create:%'").run();
+    }
+    expect(created).toBe(10);
+  });
+
+  it("N3: two parallel rotations with the same current code: exactly one wins", async () => {
+    const a = await newAccount(env, freshIp());
+    const code = ((await (await call(env, "/api/auth/backup-code", { method: "POST", cookie: a })).json()) as { code: string }).code;
+    const rs = await Promise.all(
+      [0, 1].map(() => call(env, "/api/auth/backup-code", { method: "POST", cookie: a, body: { currentCode: code } })),
+    );
+    expect(rs.map((r) => r.status).sort()).toEqual([201, 409]);
+    const u = await uidOf(a);
+    expect(
+      await env.DB.prepare("SELECT COUNT(*) AS c FROM audit_log WHERE user_id = ?1 AND event = 'backup_code_create'").bind(u)
+        .first<{ c: number }>().then((r) => r!.c),
+    ).toBe(2);
+  });
+
+  it("N3: lost-code path has its own 1/day bucket and does not burn the rotation cap", async () => {
+    const a = await newAccount(env, freshIp());
+    await call(env, "/api/auth/backup-code", { method: "POST", cookie: a });
+    const lost = await call(env, "/api/auth/backup-code", { method: "POST", cookie: a, body: { lostCode: true } });
+    expect(lost.status).toBe(201);
+    const issued = ((await lost.json()) as { code: string }).code;
+    expect((await call(env, "/api/auth/backup-code", { method: "POST", cookie: a, body: { lostCode: true } })).status).toBe(429);
+    expect((await call(env, "/api/auth/backup-code", { method: "POST", cookie: a, body: { currentCode: issued } })).status).toBe(201);
+  });
+
+  it("N5 + I3: purge deletes expired sessions and unreachable accounts only", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const expired = await newAccount(env, freshIp());
+    const withCode = await newAccount(env, freshIp());
+    const live = await newAccount(env, freshIp());
+    const [ue, uc, ul] = [await uidOf(expired), await uidOf(withCode), await uidOf(live)];
+    await call(env, "/api/auth/backup-code", { method: "POST", cookie: withCode });
+    await env.DB.prepare("INSERT INTO weight_log (user_id, day, weight_kg, created_at) VALUES (?1, '2026-11-15', 80, 1)").bind(ue).run();
+    // Age all three past the orphan grace; expire the sessions of two of them.
+    await env.DB.prepare("UPDATE users SET created_at = created_at - 172800 WHERE id IN (?1, ?2, ?3)").bind(ue, uc, ul).run();
+    await env.DB.prepare("UPDATE sessions SET expires_at = ?1 - 1 WHERE user_id IN (?2, ?3)").bind(now, ue, uc).run();
+    await purgeExpired(env.DB, now);
+    const count = (sql: string, id: string) => env.DB.prepare(sql).bind(id).first<{ c: number }>().then((r) => r!.c);
+    expect(await count("SELECT COUNT(*) AS c FROM sessions WHERE user_id = ?1", ue)).toBe(0);
+    expect(await count("SELECT COUNT(*) AS c FROM sessions WHERE user_id = ?1", uc)).toBe(0);
+    await purgeExpired(env.DB, now);
+    expect(await count("SELECT COUNT(*) AS c FROM users WHERE id = ?1", ue)).toBe(0);
+    expect(await count("SELECT COUNT(*) AS c FROM weight_log WHERE user_id = ?1", ue)).toBe(0);
+    expect(await count("SELECT COUNT(*) AS c FROM users WHERE id = ?1", uc)).toBe(1); // has a backup code
+    expect(await count("SELECT COUNT(*) AS c FROM users WHERE id = ?1", ul)).toBe(1); // has a live session
+  });
+});

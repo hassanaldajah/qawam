@@ -5,7 +5,7 @@ import { auditStatement, getSession, newSession, sessionCookie } from "../../_li
 import { sha256Hex, timingSafeEqual } from "../../_lib/crypto";
 import { parseBackupCode } from "../../_lib/backup";
 import { consume, ipKey } from "../../_lib/ratelimit";
-import { verifyTurnstile } from "../../_lib/turnstile";
+import { verifyTurnstileMetered } from "../../_lib/turnstile";
 
 /** Attempts per IP bucket (IPv6 /64) per hour, success or not. */
 export const IP_ATTEMPTS_PER_HOUR = 10;
@@ -22,19 +22,21 @@ const Body = z.strictObject({
  * POST /api/auth/restore : exchange a backup code for a new session.
  *
  * No per-account lock (any account-keyed lock is attacker-controlled: whoever knows a
- * public id could keep the owner out). Defence = 130-bit secret + per-IP attempt cap
- * consumed atomically before anything else + Turnstile on every attempt. A correct code
- * always works; unknown id and wrong secret return the identical 401.
+ * public id could keep the owner out). Defence = 130-bit secret + Turnstile on every
+ * attempt + per-IP attempt cap. Order: metered siteverify (looser per-IP bucket, N2), then
+ * the strict restore bucket only after Turnstile passed (N4: bots without solves cannot
+ * use up a shared IP's allowance), consumed atomically before the lookup/compare (L3).
+ * A correct code always works; unknown id and wrong secret return the identical 401.
  */
 export const onRequestPost = async (ctx: Ctx): Promise<Response> => {
   const db = ctx.env.DB;
   const now = nowSec();
   const ip = clientIp(ctx.request);
-  if (!(await consume(db, await ipKey(ctx.env, "restore_ip", ip), IP_ATTEMPTS_PER_HOUR, 3600, now, ctx.waitUntil))) {
+  const body = await readJson(ctx.request, Body);
+  await verifyTurnstileMetered(ctx.env, db, body.turnstileToken, "restore", ip, now, ctx.waitUntil);
+  if (!(await consume(db, await ipKey(ctx.env, "restore_ip", ip), IP_ATTEMPTS_PER_HOUR, 3600, now))) {
     return error(429, "rate_limited", { "Retry-After": "3600" });
   }
-  const body = await readJson(ctx.request, Body);
-  await verifyTurnstile(ctx.env, body.turnstileToken, "restore", ip);
 
   const parsed = parseBackupCode(body.code);
   if (!parsed) return error(401, "invalid_code");

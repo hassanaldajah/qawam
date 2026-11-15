@@ -7,6 +7,7 @@ import { generateBackupCode, parseBackupCode } from "../../_lib/backup";
 import { consume } from "../../_lib/ratelimit";
 
 export const CREATES_PER_DAY = 3;
+export const LOST_RESETS_PER_DAY = 1;
 
 const Body = z.strictObject({
   currentCode: z.string().min(1).max(64).optional(),
@@ -45,26 +46,41 @@ export const onRequestPost = async (ctx: Ctx): Promise<Response> => {
       return withRefresh(error(400, "current_code_required"), s);
     }
   }
-  // Cap counts issued codes only (validated requests).
-  if (!(await consume(db, "bc:" + s.userId, CREATES_PER_DAY, 86400, now, ctx.waitUntil))) {
+  // Separate buckets (N3): a cookie thief can use the session-only lost-code path once a
+  // day, but cannot exhaust the bucket the owner needs for a normal rotation.
+  const bucket = resetAt === null ? "bc:" : "bc_lost:";
+  const cap = resetAt === null ? CREATES_PER_DAY : LOST_RESETS_PER_DAY;
+  if (!(await consume(db, bucket + s.userId, cap, 86400, now, ctx.waitUntil))) {
     return withRefresh(error(429, "rate_limited"), s);
   }
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const code = generateBackupCode();
     const secretHash = await sha256Hex(code.secret);
-    try {
-      await db.batch([
-        db
+    // Compare-and-swap (N3): the write only applies if the code we validated is still the
+    // stored one (or, for first creation, none exists yet); the audit row is written only
+    // if the swap changed a row. One D1 batch = one transaction.
+    const write = existing
+      ? db
+          .prepare(
+            "UPDATE backup_codes SET public_id = ?2, secret_hash = ?3, created_at = ?4, reset_without_code_at = ?5 " +
+              "WHERE user_id = ?1 AND secret_hash = ?6",
+          )
+          .bind(s.userId, code.publicId, secretHash, now, resetAt, existing.secret_hash)
+      : db
           .prepare(
             "INSERT INTO backup_codes (user_id, public_id, secret_hash, created_at, reset_without_code_at) " +
-              "VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT (user_id) DO UPDATE SET public_id = excluded.public_id, " +
-              "secret_hash = excluded.secret_hash, created_at = excluded.created_at, " +
-              "reset_without_code_at = excluded.reset_without_code_at",
+              "VALUES (?1, ?2, ?3, ?4, NULL) ON CONFLICT (user_id) DO NOTHING",
           )
-          .bind(s.userId, code.publicId, secretHash, now, resetAt),
-        auditStatement(db, s.userId, resetAt === null ? "backup_code_create" : "backup_code_reset", now),
+          .bind(s.userId, code.publicId, secretHash, now);
+    try {
+      const [res] = await db.batch([
+        write,
+        db
+          .prepare("INSERT INTO audit_log (user_id, event, ts) SELECT ?1, ?2, ?3 WHERE changes() > 0")
+          .bind(s.userId, resetAt === null ? "backup_code_create" : "backup_code_reset", now),
       ]);
+      if (!res || (res.meta.changes ?? 0) === 0) return withRefresh(error(409, "code_changed"), s);
       return withRefresh(json({ code: code.display }, 201), s);
     } catch (e) {
       // public_id UNIQUE collision (~2^-50): retry once with a fresh code.

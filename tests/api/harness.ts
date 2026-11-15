@@ -52,7 +52,7 @@ export async function setup(): Promise<{ mf: Miniflare; env: Env }> {
 /**
  * Mock Cloudflare siteverify (no network in tests). Token grammar:
  * "ok:<action>" -> success for our hostname; "host:<action>" -> wrong hostname;
- * "down" -> HTTP 500; anything else -> success:false. Other URLs pass through.
+ * "down" -> HTTP 500; "hang" -> never answers (until aborted); anything else -> success:false. Other URLs pass through.
  */
 export const siteverifyCalls: Array<{ secret: string; response: string; remoteip: string }> = [];
 let mockInstalled = false;
@@ -67,6 +67,10 @@ function installTurnstileMock(): void {
     const call = { secret: String(f.get("secret")), response: String(f.get("response")), remoteip: String(f.get("remoteip")) };
     siteverifyCalls.push(call);
     if (call.response === "down") return new Response("err", { status: 500 });
+    if (call.response === "hang") {
+      const signal = init!.signal!;
+      return new Promise<Response>((_, reject) => signal.addEventListener("abort", () => reject(signal.reason)));
+    }
     const [kind, action] = call.response.split(":");
     const host = new URL(ORIGIN).hostname;
     if (kind === "ok") return Response.json({ success: true, hostname: host, action });

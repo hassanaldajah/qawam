@@ -3,11 +3,12 @@ import type { Ctx } from "../../_lib/types";
 import { clientIp, error, json, nowSec, readJson } from "../../_lib/http";
 import { auditStatement, clearCookie, getSession, newSession, requireSession, sessionCookie } from "../../_lib/session";
 import { consume, ipKey } from "../../_lib/ratelimit";
-import { verifyTurnstile } from "../../_lib/turnstile";
+import { verifyTurnstileMetered } from "../../_lib/turnstile";
 import { USER_TABLES } from "../../_lib/tables";
 
 /** Per IP bucket (IPv6 /64). */
 export const CREATE_PER_IP_PER_HOUR = 5;
+export const CREATE_PER_IP_PER_DAY = 10;
 /** Global ceiling protecting the D1 write budget (100k/day) from account farming. */
 export const CREATE_GLOBAL_PER_HOUR = 200;
 
@@ -22,13 +23,19 @@ export const onRequestPost = async (ctx: Ctx): Promise<Response> => {
   const now = nowSec();
   const ip = clientIp(ctx.request);
   const body = await readJson(ctx.request, CreateBody);
-  // Order: Turnstile first (bots do not burn a shared IP's bucket), then per-IP, then global.
-  await verifyTurnstile(ctx.env, body.turnstileToken, "create", ip);
-  const key = await ipKey(ctx.env, "create", ip);
-  if (!(await consume(db, key, CREATE_PER_IP_PER_HOUR, 3600, now, ctx.waitUntil))) {
+  // Order: metered siteverify (looser per-IP bucket, 3 s timeout), then the strict per-IP
+  // hourly + daily caps, then the global cap. Per-IP caps bound any one /64 to a small
+  // share of the global cap (N1); residual risk = many IPs + paid solves, see DECISIONS.md.
+  await verifyTurnstileMetered(ctx.env, db, body.turnstileToken, "create", ip, now, ctx.waitUntil);
+  if (
+    !(await consume(db, await ipKey(ctx.env, "create", ip), CREATE_PER_IP_PER_HOUR, 3600, now)) ||
+    !(await consume(db, await ipKey(ctx.env, "create_day", ip), CREATE_PER_IP_PER_DAY, 86400, now))
+  ) {
     return error(429, "rate_limited", { "Retry-After": "3600" });
   }
   if (!(await consume(db, "create_global", CREATE_GLOBAL_PER_HOUR, 3600, now))) {
+    // Alert hook: visible in Workers logs / Logpush; the owner reacts (WAF rule, raise cap).
+    console.error("create_global_cap_hit");
     return error(429, "rate_limited", { "Retry-After": "3600" });
   }
 
@@ -56,8 +63,8 @@ export const onRequestDelete = async (ctx: Ctx): Promise<Response> => {
   // User-keyed rate-limit buckets (IP buckets are hashed and not linkable to the user).
   stmts.push(
     db
-      .prepare("DELETE FROM rate_limits WHERE key IN (?1, ?2, ?3)")
-      .bind("bc:" + s.userId, "export:" + s.userId, "export_page:" + s.userId),
+      .prepare("DELETE FROM rate_limits WHERE key IN (?1, ?2, ?3, ?4)")
+      .bind("bc:" + s.userId, "bc_lost:" + s.userId, "export:" + s.userId, "export_page:" + s.userId),
   );
   stmts.push(auditStatement(db, s.userId, "account_delete", now));
   await db.batch(stmts);

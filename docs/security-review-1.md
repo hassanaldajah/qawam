@@ -108,3 +108,53 @@ Count: Critical 0, High 1, Medium 5, Low 8, Info 3.
 ## Dependencies and secrets
 - npm audit: 0 vulnerabilities (prod and dev) today. Versions in package.json (typescript 7, vite 8, vitest 5, zod 4) are newer than my knowledge, so I cannot judge them independently. Lockfile is committed. Add npm ci, npm audit --audit-level=high and gitleaks to CI (threat model 3.10).
 - Secrets: none in tracked files. wrangler.toml holds only the public origin and a placeholder D1 id; .gitignore covers .dev.vars and .env*. Git history was only searched for one keyword, not fully scanned.
+
+---
+
+# Re-review (commit b4669e6, 2026-11-15)
+
+Method: read the code, migration, `_headers`, built `dist/`, and tests; did not trust the status table. `npm audit`: 0 vulnerabilities. Secret grep: nothing real (only `.dev.vars.example` placeholders; `.dev.vars` ignored and untracked). Not run: the test suite, a browser, or Cloudflare (so CSP with the Turnstile widget, export CPU, and `_routes` precedence stay UNVERIFIED).
+
+Result: all 14 original findings are closed in code. New: 0 Critical, 0 High, 0 Medium, 5 Low, 2 Info.
+
+## Verification of the 14 findings
+| ID | Verdict | Evidence |
+|---|---|---|
+| H1 | Closed | `public/_headers` `/*` matches SECURITY_HEADERS minus Cache-Control; `dist/_headers` identical; `dist/index.html` has no inline script/style; no sw.js exists yet. Browser CSP run UNVERIFIED. |
+| M1 | Closed (server) | `turnstile.ts` checks success + hostname + action, 503 on missing secret or siteverify error. `/64` keying correct (`ipBucket` handles `::`, mapped IPv4, zone). Global cap in place. No frontend widget yet. |
+| M2 | Closed | No lock columns or logic in `restore.ts`; correct code always works. |
+| M3 | Closed | Composite FKs and parent `UNIQUE (id, user_id)` present; NULL `custom_food_id` is not checked by SQLite (correct); delete order meal_items, meals, custom_foods holds. |
+| M4 | Closed | Middleware demands numeric Content-Length (411) and cap (413); `readBodyBounded` counts stream bytes and cancels; fatal UTF-8. |
+| M5 | Closed | 5/h and 200 pages/h; cursor paging. CPU not measured (first page is still 13 tables x 2000 rows). |
+| L1 | Closed, with residual (N3) | Rotation needs the current code. |
+| L2, L3 | Closed | Consume first (atomic upsert); one 401 shape; dummy hash. |
+| L4 | Closed | HMAC with RL_KEY; throws if missing (no plain-hash fallback); bounded purge; user buckets deleted on account delete. |
+| L5 | Closed | 400 without CF-Connecting-IP. |
+| L6 | Closed | 500 returns cf-ray only; no `e.message` logged; 90-day audit purge. |
+| L7 | Closed | `created_at` absolute cap in `getSession`. |
+| L8 | Closed | `Sec-Fetch-Site` must be `same-origin` when present. |
+
+## New findings
+### Low
+- **N1. Global creation cap is a DoS lever.** `account.ts:12,31`. Anyone who can pay for Turnstile solves can spend 200/h and block new users. Accepted trade-off of the advice. Fix: keep it, add the free WAF rate rule on `/api/auth/account`, alert on `create_global` hitting the cap.
+- **N2. Siteverify is unmetered and has no timeout.** `turnstile.ts:23`, `account.ts:26`. Turnstile runs before the per-IP consume, so garbage tokens cost one outbound fetch each; the fetch can hang. Fix: `fetch(url, { method: "POST", body: form, signal: AbortSignal.timeout(3000) })`, and use the WAF rule.
+- **N3. Cookie thief can burn the backup-code cap and rotate with `lostCode`.** `backup-code.ts:42-51`. Three `lostCode` calls use the shared `bc:` bucket, so the owner cannot regenerate for 24 h; rotation check and upsert are not atomic, so two parallel rotations with the same current code both succeed. Banner is the only alert. Fix: separate bucket for `lostCode`, and make the upsert conditional on the old `secret_hash` (`WHERE secret_hash = ?old`, check `meta.changes`).
+- **N4. Restore bucket is consumed before Turnstile.** `restore.ts:33-37`. Bots can use up 10/h for a shared IP or /64 (CGNAT, mobile) and block real users from restoring. Trade-off with N2. Fix: WAF rule; consider bumping on failed Turnstile only.
+- **N5. Expired sessions are never purged.** `ratelimit.ts:29-38` handles rate_limits and audit_log only. Expired or abandoned rows grow (bounded by creation caps). Fix: add `DELETE FROM sessions WHERE rowid IN (SELECT rowid FROM sessions WHERE expires_at < ?1 LIMIT ?2)` to `purgeExpired`.
+
+### Info
+- **N6. UNVERIFIED: CSP with the live Turnstile widget.** Docs may also require `connect-src https://challenges.cloudflare.com` or style allowances; test in a real browser before the widget ships, and keep `_headers` and SECURITY_HEADERS equal.
+- **N7. Deployment checklist.** `RL_KEY` and `TURNSTILE_SECRET` must exist as Pages secrets (missing RL_KEY gives 500 on create, restore, and later rate-limited routes, after a Turnstile token is spent). Replace the placeholder D1 id. I3 (orphaned anonymous accounts after restore) is still open and low risk.
+
+Remaining by severity: Critical none, High none, Medium none, Low N1-N5, Info N6-N7 (plus I3).
+
+## Status after fix round 2 (2026-11-15; tests in tests/api/security-fixes.test.ts "Re-review round 2")
+| ID | Status | Fix |
+|---|---|---|
+| N1 | Fixed, residual accepted | Per-IP (/64) caps 5/h and 10/day bound one IP's share of the 200/h global cap; `create_global_cap_hit` logged as an alert hook. Residual: many IPs + paid Turnstile solves can still fill the global cap (availability only, no data risk); mitigate with the free WAF rate rule on /api/auth/* (owner dashboard task). |
+| N2 | Fixed | siteverify has a 3 s AbortSignal timeout (503, fail closed) and is metered per IP (30/h, `siteverify` bucket) BEFORE the fetch. |
+| N3 | Fixed | Rotation is a compare-and-swap (`WHERE secret_hash = old`, `meta.changes` checked, audit row via `changes() > 0` in the same batch); a losing parallel rotation gets 409. Lost-code path has its own 1/day bucket, so it cannot burn the 3/day rotation cap. Residual: a cookie thief can still do one lost-code reset per day (banner on all devices); a full cookie theft already equals account access. |
+| N4 | Fixed | Strict restore bucket (10/h) consumed only after Turnstile passes; failed solves only hit the looser siteverify meter. |
+| N5 | Fixed | purgeExpired deletes expired (sliding or 2-year absolute) sessions, bounded; getSession deletes on use. purgeExpired is the entry point for the future cron Worker. |
+| I3 | Fixed | purgeExpired deletes unreachable accounts (no session, no backup code, older than 1 day) via the users FK cascade. |
+| N6, N7 | Open (info) | Browser CSP check with the live widget and the deploy checklist (RL_KEY, TURNSTILE_SECRET, D1 id) remain before deploy. |

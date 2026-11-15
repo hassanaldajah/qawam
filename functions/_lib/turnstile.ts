@@ -1,7 +1,11 @@
-import type { Env } from "./types";
+import type { D1Database, Env } from "./types";
+import { consume, ipKey } from "./ratelimit";
 import { HttpError } from "./http";
 
 export const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+
+/** A hung siteverify must not hold the request; timeout = 503 (fail closed). */
+export const SITEVERIFY_TIMEOUT_MS = 3000;
 
 export type TurnstileAction = "create" | "restore";
 
@@ -20,7 +24,7 @@ export async function verifyTurnstile(env: Env, token: string, action: Turnstile
   form.append("remoteip", ip);
   let data: { success?: boolean; hostname?: string; action?: string };
   try {
-    const res = await fetch(SITEVERIFY_URL, { method: "POST", body: form });
+    const res = await fetch(SITEVERIFY_URL, { method: "POST", body: form, signal: AbortSignal.timeout(SITEVERIFY_TIMEOUT_MS) });
     if (!res.ok) throw new Error("siteverify_status");
     data = (await res.json()) as typeof data;
   } catch {
@@ -30,4 +34,24 @@ export async function verifyTurnstile(env: Env, token: string, action: Turnstile
   if (data.success !== true || data.hostname !== expectedHost || data.action !== action) {
     throw new HttpError(403, "turnstile_failed");
   }
+}
+
+/** Siteverify fetches per IP bucket (IPv6 /64) per hour, across create + restore. */
+export const SITEVERIFY_PER_IP_PER_HOUR = 30;
+
+/**
+ * Meter outbound siteverify calls per IP BEFORE fetching (N2), with a looser bucket than
+ * the action limits, so garbage tokens cannot cause unbounded fetches, while the strict
+ * action buckets are consumed only after Turnstile passes (N4: bots without valid solves
+ * cannot use up a shared IP's restore/create allowance).
+ */
+export async function verifyTurnstileMetered(
+  env: Env, db: D1Database, token: string, action: TurnstileAction, ip: string, now: number,
+  waitUntil?: (p: Promise<unknown>) => void,
+): Promise<void> {
+  const key = await ipKey(env, "siteverify", ip);
+  if (!(await consume(db, key, SITEVERIFY_PER_IP_PER_HOUR, 3600, now, waitUntil))) {
+    throw new HttpError(429, "rate_limited");
+  }
+  await verifyTurnstile(env, token, action, ip);
 }
