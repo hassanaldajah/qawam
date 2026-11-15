@@ -1,0 +1,15 @@
+# Cloudflare Pages project (Free plan only; never upgrade to Workers Paid).
+# No secrets here. Local overrides go in .dev.vars (git-ignored).
+name = "qawam"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-11-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://qawam.al-hassan.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qawam"
+# Placeholder: replace with the id printed by `npx wrangler d1 create qawam` (an id is not a secret).
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
