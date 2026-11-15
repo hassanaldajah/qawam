@@ -13,3 +13,9 @@
 - AFTER the code is finished and all gates pass: create a PUBLIC GitHub repo, push, and connect it to Cloudflare Pages (Git integration).
 - Public repo => before push: secret scan clean, no .dev.vars/tokens/owner secret, no personal data, USDA credit in README, license chosen.
 - Not before completion. Not earlier phases.
+
+## 2026-11-15 owner rule: 100% free, never billed
+- Stay on Cloudflare Free plan only; never upgrade to Workers Paid. On Free, limits make requests fail instead of billing (verify in docs before deploy).
+- Any new tool/service/font/library/asset must be free (open license) with no trial, card, or paid tier. Check each before adding; record in VERIFIED.md.
+- Cloudflare Access (free tier) only if verified free for our use; otherwise skip.
+- Fail closed: global AI counter pauses AI before the free pool ends.
