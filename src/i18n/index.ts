@@ -8,8 +8,15 @@ export function applyLang(l: Lang) {
   document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
   try { localStorage.setItem("lang", l); } catch { /* ignore */ }
 }
+/** Switch language everywhere (strings, <html lang/dir>, document title). */
+export function setLang(l: Lang) {
+  void i18n.changeLanguage(l);
+  applyLang(l);
+  if (typeof document !== "undefined") document.title = i18n.t("meta.title");
+}
 let saved: Lang = "ar";
 try { const s = localStorage.getItem("lang"); if (s === "en" || s === "ar") saved = s; } catch { /* ignore */ }
+if (import.meta.env.VITE_INTRO_DEBUG === "1" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("lang") === "en") saved = "en";
 i18n.use(initReactI18next).init({ resources, lng: saved, fallbackLng: "ar", interpolation: { escapeValue: false } });
 if (typeof document !== "undefined") applyLang(saved);
 export default i18n;

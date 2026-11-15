@@ -10,5 +10,11 @@ describe("WCAG AA (4.5:1) brand contrast", () => {
       expect(ratio(t.accentText, t.bg)).toBeGreaterThanOrEqual(4.5);
       expect(ratio(t.green, t.bg)).toBeGreaterThanOrEqual(4.5);
     });
+    it(`${name}: gradient end, muted text, text on cards`, () => {
+      expect(ratio(t.onPrimary, t.primaryEnd)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(t.muted, t.bg)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(t.muted, t.card)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(t.fg, t.card)).toBeGreaterThanOrEqual(4.5);
+    });
   }
 });

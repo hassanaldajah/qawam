@@ -3,7 +3,7 @@ import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import i18n, { applyLang } from "../../src/i18n";
 import { BottomNav, TABS } from "../../src/app/BottomNav";
-import { evaluate, makeBackupCode, type Goal } from "../../src/lib/plan";
+import { evaluate, type Goal } from "../../src/lib/plan";
 import { canLeaveSafety } from "../../src/onboarding/Onboarding";
 
 const base: Goal = { current: 80, target: 75, heightCm: 170, age: 30, sex: "m", activity: 1.55, weeks: 12, pregnant: false, medical: false };
@@ -64,8 +64,5 @@ describe("QA: onboarding safety gating boundaries", () => {
   it("QA-1 fixed: target far below a healthy BMI is blocked", () => {
     // 35 kg at 170 cm = BMI 12.1
     expect(canLeaveSafety({ ...base, current: 50, target: 35, weeks: 60 }), "BMI<18.5 target should be blocked").toBe(false);
-  });
-  it("backup codes are unique across generations", () => {
-    expect(new Set(Array.from({ length: 200 }, makeBackupCode)).size).toBe(200);
   });
 });

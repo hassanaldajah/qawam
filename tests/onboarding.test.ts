@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluate, makeBackupCode, type Goal } from "../src/lib/plan";
+import { evaluate, type Goal } from "../src/lib/plan";
 import { canFinishBackup, canLeaveGoal, canLeaveSafety } from "../src/onboarding/Onboarding";
 
 const base: Goal = { current: 80, target: 75, heightCm: 170, age: 30, sex: "m", activity: 1.55, weeks: 12, pregnant: false, medical: false };
@@ -32,10 +32,5 @@ describe("onboarding validation", () => {
   it("backup step requires the checkbox", () => {
     expect(canFinishBackup(false)).toBe(false);
     expect(canFinishBackup(true)).toBe(true);
-  });
-  it("generates a formatted random code", () => {
-    const c = makeBackupCode();
-    expect(c).toMatch(/^([A-Z2-9]{4}-){3}[A-Z2-9]{4}$/);
-    expect(makeBackupCode()).not.toBe(c);
   });
 });

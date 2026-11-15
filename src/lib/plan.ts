@@ -28,10 +28,3 @@ export function evaluate(g: Goal): Plan {
   const safeWeeks = lossKg > 0 ? Math.max(g.weeks, Math.ceil(lossKg / g.current / 0.01)) : g.weeks;
   return { kcal, pctPerWeek: Math.round(pct * 100) / 100, issues, safeWeeks, ok: issues.length === 0 };
 }
-export function makeBackupCode(): string {
-  const a = new Uint8Array(16);
-  crypto.getRandomValues(a);
-  const abc = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  const s = Array.from(a, (b) => abc[b % abc.length]).join("");
-  return s.match(/.{4}/g)!.join("-");
-}

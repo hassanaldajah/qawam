@@ -55,3 +55,7 @@ Usage:
 - Reduced motion: no pulsing glow.
 
 Macros (dark / light): protein `#19D3F0`/`#0E6577` (9.9 / 6.3), carbs `#FFA630`/`--accent` (9.1), fat `#9BFF2E`/`--green` (14.2), water `#4DA3FF` (6.8 on navy), steps `#FF5FA2` (6.3 on navy). Always pair with label or icon.
+
+## 2026-11-15 UI rebuild (supersedes palette/Neon sections above)
+Primary teal (light #0E6577 -> #17703F gradient, white text; dark #2CC6DA -> #8BE04E, navy text). Accent lime/green. Coral (#B93A1F text light / #FF7A59 dark) is a small alert accent only; never blended with lime (no brown/amber). Neon = glows only. Tokens in src/tokens.ts, verified by tests/contrast.test.ts (incl. gradient end, muted, card).
+Components: Button (primary/secondary/ghost/danger, sm/md/lg, aria-busy sweep), BackButton (44px, mirrors in RTL), AppBar, Card (`hue` = glow colour), NumField, Check, Ring, Bar (src/app/ui.tsx). Background: .scene (mesh + ribbons + /bg-pattern.svg). 3D: src/three/* (lazy). Visual-QA flags only in `VITE_INTRO_DEBUG=1` builds: ?intro-frame=t, ?demo, ?nointro, ?static, ?lang=en, ?scroll=id.
