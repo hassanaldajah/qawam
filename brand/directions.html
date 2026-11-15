@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Qawam logo directions</title>
+<style>
+:root{--p:#0F4C5C;--a:#FF7A59;--bg:#F7F9F9;--fg:#10222A}
+.dark{--p:#7FD1DE;--a:#FF8F70;--bg:#0B1A20;--fg:#EAF4F6}
+body{margin:0;font:16px system-ui,sans-serif;background:#fff;color:#10222A}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.pane{background:var(--bg);color:var(--fg);padding:16px 16px 24px}
+h2{margin:8px 0 4px;font-size:18px}
+.sizes{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin:12px 0}
+.mono *{fill:none}
+.p{stroke:var(--p)} .a{stroke:var(--a)} .pf{fill:var(--p)} .af{fill:var(--a)}
+.mono .p,.mono .a{stroke:var(--fg)} .mono .pf,.mono .af{fill:var(--fg)}
+svg{display:block}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<!-- A: Arabic letter qaf, tail rising -->
+<symbol id="A" viewBox="0 0 64 64" stroke-linecap="round" stroke-linejoin="round">
+ <circle class="af" cx="26" cy="9" r="3.2" stroke="none"/><circle class="af" cx="38" cy="9" r="3.2" stroke="none"/>
+ <circle class="p" cx="32" cy="29" r="11" fill="none" stroke-width="7"/>
+ <path class="p" d="M43 29V39C43 51 33 57 20 53" fill="none" stroke-width="7"/>
+ <path class="a" d="M14 49C12 54 11 57 11 57" fill="none" stroke-width="0"/>
+</symbol>
+<!-- B: upright figure from circle + arc -->
+<symbol id="B" viewBox="0 0 64 64" stroke-linecap="round" stroke-linejoin="round">
+ <circle class="af" cx="32" cy="12" r="7" stroke="none"/>
+ <path class="p" d="M13 30A19 19 0 0 0 51 30" fill="none" stroke-width="7"/>
+ <path class="p" d="M32 30V56" fill="none" stroke-width="7"/>
+</symbol>
+<!-- C: Q/qaf ring with leaf -->
+<symbol id="C" viewBox="0 0 64 64" stroke-linecap="round" stroke-linejoin="round">
+ <circle class="p" cx="31" cy="31" r="20" fill="none" stroke-width="7"/>
+ <path class="af" d="M31 41C21 37 23 25 31 22C39 25 41 37 31 41Z" stroke="none"/>
+ <path class="a" d="M44 44L56 56" fill="none" stroke-width="7"/>
+</symbol>
+</defs></svg>
+
+<div class="row">
+<div class="pane"><h2>Light</h2><div id="l"></div></div>
+<div class="pane dark"><h2>Dark</h2><div id="d"></div></div>
+</div>
+<script>
+const names={A:"A — ق monogram (tail rises)",B:"B — upright figure (circle + arc)",C:"C — Q/ق ring + leaf"};
+function build(el){
+ for(const k of "ABC"){
+  let h=`<h2>${names[k]}</h2><div class="sizes">`;
+  for(const s of [16,32,64,128]) h+=`<svg width="${s}" height="${s}"><use href="#${k}"/></svg>`;
+  h+=`</div><div class="sizes mono">`;
+  for(const s of [16,32,64]) h+=`<svg width="${s}" height="${s}"><use href="#${k}"/></svg>`;
+  h+=`<span>one color</span></div>`;
+  el.insertAdjacentHTML("beforeend",h);
+ }
+}
+build(document.getElementById("l"));build(document.getElementById("d"));
+</script></body></html>
