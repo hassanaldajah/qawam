@@ -1,0 +1,7 @@
+@import "tailwindcss";
+:root{--bg:#F6F8F7;--fg:#101729;--primary:#0E6577;--on-primary:#fff;--accent:#A65300;--green:#2F7A12;--card:#fff;--border:#D6DEDC}
+:root[data-theme="dark"]{--bg:#101729;--fg:#fff;--primary:#75D02B;--on-primary:#101729;--accent:#FA9414;--green:#75D02B;--card:#18223B;--border:#2A3555}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#101729;--fg:#fff;--primary:#75D02B;--on-primary:#101729;--accent:#FA9414;--green:#75D02B;--card:#18223B;--border:#2A3555}}
+@theme{--color-bg:var(--bg);--color-fg:var(--fg);--color-primary:var(--primary);--color-onprimary:var(--on-primary);--color-accent:var(--accent);--color-card:var(--card);--color-line:var(--border)}
+html,body{background:var(--bg);color:var(--fg);margin:0;font-family:system-ui,"Segoe UI",Tahoma,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
