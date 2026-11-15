@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Qawam Kufic wordmark</title>
+<style>
+body{margin:0;font:16px system-ui,sans-serif}
+.pane{padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.light{background:#FFF8F0;color:#1B1030}.dark{background:#140B26;color:#fff}
+.tealbg{background:#0F4C5C;color:#fff}
+svg{display:block;max-width:100%;height:auto}
+.row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;justify-content:center}
+small{opacity:.7}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<linearGradient id="g" gradientUnits="userSpaceOnUse" x1="190" y1="0" x2="20" y2="0">
+ <stop offset="0" stop-color="#FFB020"/><stop offset=".5" stop-color="#FF3D7F"/><stop offset="1" stop-color="#6A35FF"/>
+</linearGradient>
+<g id="wm" fill="none" stroke-width="8" stroke-linejoin="miter">
+ <rect x="164" y="36" width="24" height="24"/>
+ <path d="M164 60H140"/>
+ <rect x="116" y="36" width="24" height="24"/>
+ <path d="M116 60V84H102"/>
+ <path d="M92 6V64"/>
+ <rect x="52" y="36" width="24" height="24"/>
+ <path d="M76 60V84H30"/>
+ <rect x="22" y="80" width="8" height="8" stroke="none" fill="currentColor" class="term"/>
+ <rect x="167" y="17" width="7" height="7" stroke="none" fill="currentColor" transform="rotate(45 170.5 20.5)" class="dot"/>
+ <rect x="179" y="17" width="7" height="7" stroke="none" fill="currentColor" transform="rotate(45 182.5 20.5)" class="dot"/>
+</g>
+<symbol id="wmG" viewBox="0 0 200 100"><use href="#wm" stroke="url(#g)" color="#FF3D7F"/></symbol>
+<symbol id="wmW" viewBox="0 0 200 100"><use href="#wm" stroke="#fff" color="#fff"/></symbol>
+<symbol id="wmK" viewBox="0 0 200 100"><use href="#wm" stroke="currentColor"/></symbol>
+<symbol id="ic" viewBox="0 0 64 64">
+ <rect width="64" height="64" rx="14" fill="url(#g)"/>
+ <g fill="none" stroke="#fff" stroke-width="6" stroke-linejoin="miter">
+  <rect x="24" y="28" width="20" height="18"/><path d="M24 46V56H10"/></g>
+ <g fill="#fff"><rect x="29" y="11" width="6" height="6" transform="rotate(45 32 14)"/><rect x="39" y="11" width="6" height="6" transform="rotate(45 42 14)"/></g>
+</symbol>
+</defs></svg>
+
+<div class="pane light"><svg width="320" height="160"><use href="#wmG"/></svg><small>Gradient — light</small></div>
+<div class="pane dark"><svg width="320" height="160"><use href="#wmG"/></svg><small>Gradient — dark</small></div>
+<div class="pane tealbg"><svg width="240" height="120"><use href="#wmW"/></svg><small>Reversed (white)</small></div>
+<div class="pane light"><svg width="240" height="120" style="color:#1B1030"><use href="#wmK"/></svg><small>One color</small></div>
+<div class="pane dark"><div class="row">
+ <svg width="16" height="16"><use href="#ic"/></svg><svg width="32" height="32"><use href="#ic"/></svg><svg width="64" height="64"><use href="#ic"/></svg><svg width="128" height="128"><use href="#ic"/></svg></div><small>App icon (ق) 16 / 32 / 64 / 128</small></div>
+</body></html>
