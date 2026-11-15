@@ -44,3 +44,20 @@ Cloudflare login (wrangler), real iPhone for push/shortcut tests, `wrangler secr
 
 ## Verification of this phase
 Review PLAN with alsaqr and alsheikh; fill VERIFIED.md; then wait for your "go".
+
+## Challenges (alsaqr review, 2026-11-15; details in docs/THREAT_MODEL.md)
+1. **Reviewer roster is out of date**: the owner dropped alsheikh on 2026-11-13. Phase 0 and the final review should be alsaqr + security-reviewer only.
+2. **Account farming bypasses per-user AI quotas**: anonymous accounts cost nothing to create. Add Turnstile (free) on account creation and on AI calls, a per-IP quota, and an atomic quota reservation before each AI call. The global neuron counter stays authoritative.
+3. **iOS Home-Screen PWA storage is separate from Safari**, so the cookie does not carry over after "Add to Home Screen". The onboarding and restore UX must plan for this. Add it to VERIFIED.md as UNVERIFIED.
+4. **Web Push cost is underestimated**: payloads need RFC 8291 encryption (ECDH+HKDF+AES-GCM) on top of ES256 signing. Use payload-less pushes plus a service worker fetch, and cache the VAPID JWT per push origin (up to 24 h).
+5. **Push SSRF is missing**: the cron Worker fetches user-supplied endpoints. Allowlist the push-service hosts at subscribe time and at send time.
+6. **The owner panel should use Cloudflare Access** (Zero Trust free tier) as its first gate, with OWNER_SECRET as the second. It should show pre-aggregated `stats_daily` built by cron, never raw health rows, to respect privacy and the 10 ms CPU limit.
+7. **The shortcut key is not designed**: it needs a separate hashed credential, write-only scopes, a Bearer header (never in the URL), a revoke list, value bounds and idempotency. Add it to the phase 2 schema, not phase 7.
+8. **Backup-code "lockout" lets anyone lock out a victim**: use per-account exponential backoff plus per-IP limits plus Turnstile. The code format includes a public id so lookup and rate limiting can be done per account.
+9. **D1 write budget**: per-request `last_seen` or rate-limit writes would burn 100k writes/day. Refresh at most daily, and count only failures and expensive calls. Check whether the Workers Rate Limiting binding exists on Free.
+10. **"EXIF strip" server-side is not CPU-feasible**: resize plus re-encode on the client via canvas (<= 768 px). The server checks only magic bytes and size, and accepts raw bytes, not base64.
+11. **Missing privacy features**: data export, hard delete of the account, generic lock-screen notification text, and checking whether Oman PDPL applies to health data. Add these to the acceptance criteria.
+12. **Cookie needs the `__Host-` prefix**: other `*.al-hassan.dev` sites (portfolio etc.) could otherwise inject cookies. Enable HSTS `preload` only after auditing every subdomain.
+13. **Security headers must cover Functions responses too**: `_headers` only covers static assets. Add shared middleware and test both paths.
+14. **Accuracy**: AI grams estimates are unreliable. The user must confirm or edit items before saving, and kcal/macro math always comes from the nutrition table.
+15. **The spike list is missing items**: CPU for the session path, a 1 MB AI request, Access JWT verify, the free-tier cron trigger count, D1 Time Travel retention on Free, and the push host list.

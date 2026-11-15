@@ -19,3 +19,13 @@
 - Any new tool/service/font/library/asset must be free (open license) with no trial, card, or paid tier. Check each before adding; record in VERIFIED.md.
 - Cloudflare Access (free tier) only if verified free for our use; otherwise skip.
 - Fail closed: global AI counter pauses AI before the free pool ends.
+
+## 2026-11-15 alsaqr review (proposed; see docs/THREAT_MODEL.md + PLAN.md "Challenges")
+- Quota bypass via free anon accounts: per-IP quota, atomic reserve-before-AI-call, global neuron counter as final limit; Turnstile (free, VERIFY it stays free).
+- Push SSRF: cron Worker only fetches allow-listed push-service hosts.
+- Push: payload-less pushes (encryption costs CPU); service worker fetches content.
+- Backup-code lockout: increasing delays per account + per-IP limits, no hard lock (avoid victim lockout).
+- iOS Home-Screen PWA may not share Safari cookies => possible second account; UNVERIFIED, test on real iPhone; backup code is the bridge.
+- Owner panel: aggregates only, Cloudflare Access only if verified free.
+- Session cookie `__Host-` prefix; shortcut-key schema moves to phase 2; export + delete account built early.
+- Reviewer note: alsaqr suggested dropping alsheikh (owner dropped it 2026-11-13), but owner re-chose "alsaqr + alsheikh" today for plan/final review only.
