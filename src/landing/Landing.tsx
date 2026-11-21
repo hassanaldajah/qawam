@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Camera, MessageSquareText, Target, Dumbbell, Moon, Bell, ShieldCheck, Plus, CircleCheck, Lock, Sparkles, Flame,
-  Droplets, Footprints, KeyRound, ArrowLeft, Gauge, Activity, Leaf,
+  Droplets, Footprints, ArrowLeft, Gauge, Activity, Leaf,
 } from "lucide-react";
 import { ButtonLink, Logo, LangToggle, Ring, Bar } from "../app/ui";
 import { QawamMark } from "../brand/QawamMark";
@@ -133,7 +133,7 @@ export function Landing() {
             <p className="lead" data-reveal="2">{t("lp.lead")}</p>
             <div className="cta-row" data-reveal="3">
               <ButtonLink to={ctaTo} size="lg" icon={<Plus size={20} aria-hidden="true" />}>{ctaLabel}</ButtonLink>
-              {!authed && <ButtonLink to="/restore" size="lg" variant="secondary" icon={<KeyRound size={20} aria-hidden="true" />}>{t("lp.restore")}</ButtonLink>}
+              <a href="#features" className="btn btn-secondary btn-lg"><Sparkles size={20} aria-hidden="true" /><span className="btn-label">{t("lp.navFeatures")}</span></a>
             </div>
             <ul className="trust" data-reveal="4">
               {(["t1", "t2", "t3"] as const).map((k) => <li key={k}><CircleCheck size={16} aria-hidden="true" />{t(`lp.${k}`)}</li>)}
@@ -281,7 +281,7 @@ export function Landing() {
           </div>
           <nav aria-label={t("lp.footProduct")} className="foot-col">
             <h3>{t("lp.footProduct")}</h3>
-            <a href="#app">{t("lp.navApp")}</a><a href="#features">{t("lp.navFeatures")}</a><a href="#how">{t("lp.navHow")}</a><Link to="/restore">{t("lp.restore")}</Link>
+            <a href="#app">{t("lp.navApp")}</a><a href="#features">{t("lp.navFeatures")}</a><a href="#how">{t("lp.navHow")}</a><a href="#privacy">{t("lp.navPrivacy")}</a>
           </nav>
           <nav aria-label={t("lp.footLegal")} className="foot-col">
             <h3>{t("lp.footLegal")}</h3>
