@@ -1,5 +1,7 @@
-# PROGRESS (2026-11-15)
-Done: plan + threat model + decisions; repo public (hassanaldajah/qawam), AL-Hareth invited; logo SVG + icons; Vite/React/TS/Tailwind shell (RTL default, AR/EN toggle), contrast tests, build OK.
-Rules: 100% free; no owner panel/password; push after each phase.
-Next: phase-0 spike (neuron cost, CPU) needs Cloudflare login; wrangler.toml + D1 migrations + anonymous auth (__Host- cookie, hashed token); then goal engine before dashboard.
-UI rebuild done (landing+intro 3D, onboarding wired to API, app screens); not committed. Needs VITE_TURNSTILE_SITEKEY in Pages env.
+# PROGRESS (2026-11-21)
+Done: plan + threat model + security reviews; D1/auth/API; app screens.
+2026-11-21 landing rebuild (not committed yet): new brand-dark landing (src/landing/Landing.tsx + landing.css), Alexandria font self-hosted,
+3D robot intro/hero removed (three.js dropped). Logo rebuilt from owner's artwork: scripts/build-mark.py -> src/brand/markPaths.ts +
+public/brand/qawam-mark.webp; <QawamMark> animates ONLY the legs in place. New icons, og.png, logo-mark.svg.
+Verified: build OK, 82/82 tests, typecheck, desktop + 390px screenshots.
+Next: owner review -> commit + push (Cloudflare Pages deploys qawam.al-hassan.dev). Needs VITE_TURNSTILE_SITEKEY in Pages env.

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, WifiOff, TriangleAlert, CircleCheck, Info } from "lucide-react";
 import { useApp } from "../lib/store";
 import { setLang } from "../i18n";
+import { QawamMark } from "../brand/QawamMark";
 
 export type Variant = "primary" | "secondary" | "ghost" | "danger";
 export type Size = "sm" | "md" | "lg";
@@ -48,11 +49,11 @@ export function BackButton({ fallback = "/", onBack }: { fallback?: string; onBa
   );
 }
 
-export function Logo({ size = 38, withText = true, to = "/" }: { size?: number; withText?: boolean; to?: string }) {
+export function Logo({ size = 38, withText = true, to = "/", motion = "hover" }: { size?: number; withText?: boolean; to?: string; motion?: "run" | "hover" | "none" }) {
   const { t } = useTranslation();
   return (
     <Link to={to} className="brand" aria-label={t("a11y.home")}>
-      <img src="/logo-symbol.svg" alt="" width={size} height={Math.round(size * 0.85)} decoding="async" />
+      <QawamMark width={size} motion={motion} />
       {withText && <span aria-hidden="true">{t("app")}</span>}
     </Link>
   );

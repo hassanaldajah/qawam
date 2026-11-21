@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { BottomNav } from "./BottomNav";
@@ -6,10 +6,10 @@ import { Today, Log, Workouts, Progress, More, DeleteAccount } from "../screens/
 import { Onboarding } from "../onboarding/Onboarding";
 import { Restore } from "../onboarding/Restore";
 import { Privacy, Terms } from "../landing/Legal";
-import { Intro, shouldPlayIntro } from "../intro/Intro";
+import { QawamMark } from "../brand/QawamMark";
 import { applyTheme, useApp } from "../lib/store";
 
-// Landing (with its fx + lazy 3D) is split out so the signed-in app stays small.
+// Landing (with its fx and styles) is split out so the signed-in app stays small.
 const Landing = lazy(() => import("../landing/Landing").then((m) => ({ default: m.Landing })));
 
 function Scene() {
@@ -24,7 +24,7 @@ function Splash() {
   const { t } = useTranslation();
   return (
     <div className="splash" role="status" aria-label={t("loading")}>
-      <img src="/logo-symbol.svg" alt="" width="120" height="102" />
+      <QawamMark width={132} />
       <div className="bar-load" aria-hidden="true" />
     </div>
   );
@@ -39,7 +39,6 @@ export function App() {
   const checkSession = useApp((s) => s.checkSession);
   const setOffline = useApp((s) => s.setOffline);
   const loc = useLocation();
-  const [intro, setIntro] = useState(shouldPlayIntro);
   const first = useRef(true);
 
   useEffect(() => { void checkSession(); }, [checkSession]);
@@ -64,8 +63,7 @@ export function App() {
   return (
     <>
       <Scene />
-      {intro && <Intro onDone={() => setIntro(false)} />}
-      {status === "checking" ? (!intro && <Splash />) : (
+      {status === "checking" ? <Splash /> : (
         <Suspense fallback={<Splash />}>
           <Routes>
             <Route path="/start/*" element={<Onboarding />} />
