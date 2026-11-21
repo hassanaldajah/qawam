@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { BottomNav } from "./BottomNav";
@@ -30,6 +30,21 @@ function Splash() {
   );
 }
 
+/** The intro splash stays ~1.8s on the first load of a session so the running mark is seen; never on later loads. */
+const INTRO_MS = 1800;
+function useIntroHold() {
+  const [hold, setHold] = useState(() => {
+    try { return !sessionStorage.getItem("qawam.intro") && !matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; }
+  });
+  useEffect(() => {
+    if (!hold) return;
+    try { sessionStorage.setItem("qawam.intro", "1"); } catch { /* private mode */ }
+    const id = window.setTimeout(() => setHold(false), INTRO_MS);
+    return () => window.clearTimeout(id);
+  }, [hold]);
+  return hold;
+}
+
 const TAB_PATHS = new Set(["/", "/log", "/workouts", "/progress", "/more"]);
 
 export function App() {
@@ -40,6 +55,7 @@ export function App() {
   const setOffline = useApp((s) => s.setOffline);
   const loc = useLocation();
   const first = useRef(true);
+  const hold = useIntroHold();
 
   useEffect(() => { void checkSession(); }, [checkSession]);
   useEffect(() => { applyTheme(theme); }, [theme]);
@@ -63,7 +79,7 @@ export function App() {
   return (
     <>
       <Scene />
-      {status === "checking" ? <Splash /> : (
+      {status === "checking" || hold ? <Splash /> : (
         <Suspense fallback={<Splash />}>
           <Routes>
             <Route path="/start/*" element={<Onboarding />} />

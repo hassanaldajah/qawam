@@ -15,7 +15,7 @@
   --glass:rgb(255 255 255/.72);
   --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:24px;
   --ease:cubic-bezier(.2,0,0,1);
-  --font:"Alexandria Variable",system-ui,-apple-system,"Segoe UI","Noto Sans Arabic","Geeza Pro",Tahoma,Roboto,sans-serif;
+  --font:"Rubik Variable",system-ui,-apple-system,"Segoe UI","Noto Sans Arabic","Geeza Pro",Tahoma,Roboto,sans-serif;
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
@@ -269,7 +269,9 @@ button.list-item{border:1px solid var(--border);background:var(--card)}
 
 /* ============ Splash ============ */
 .splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:var(--bg)}
-.splash .qm,.splash img{width:132px;height:auto}
+.splash .qm,.splash img{width:150px;height:auto}
+.splash .qm-leg{animation-duration:.36s!important}
+.splash{background:radial-gradient(600px 400px at 50% 45%,rgb(94 230 181/.14),transparent 70%),var(--bg)}
 .splash .bar-load{width:120px;height:3px;border-radius:9px;background:var(--border);overflow:hidden;position:relative}
 .splash .bar-load::after{content:"";position:absolute;inset:0;width:40%;border-radius:9px;background:var(--grad);animation:load 1.1s var(--ease) infinite}
 @keyframes load{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
@@ -280,8 +282,8 @@ button.list-item{border:1px solid var(--border);background:var(--card)}
 .qm-leg{transform-box:view-box}
 .qm-front{transform-origin:290px 244px}
 .qm-back{transform-origin:262px 262px}
-.qm-run .qm-front,:is(a,button):is(:hover,:focus-visible) .qm-hover .qm-front{animation:qm-front .6s cubic-bezier(.45,0,.55,1) infinite alternate}
-.qm-run .qm-back,:is(a,button):is(:hover,:focus-visible) .qm-hover .qm-back{animation:qm-back .6s cubic-bezier(.45,0,.55,1) infinite alternate}
+.qm-run .qm-front,:is(a,button):is(:hover,:focus-visible) .qm-hover .qm-front{animation:qm-front .5s cubic-bezier(.45,0,.55,1) infinite alternate}
+.qm-run .qm-back,:is(a,button):is(:hover,:focus-visible) .qm-hover .qm-back{animation:qm-back .5s cubic-bezier(.45,0,.55,1) infinite alternate}
 @keyframes qm-front{from{transform:rotate(8deg)}to{transform:rotate(-8deg)}}
 @keyframes qm-back{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
 
